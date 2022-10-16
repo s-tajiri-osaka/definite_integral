@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>定積分をするHTML</title>
+<style>
+#func_area {
+    margin: 10px;
+}
+#calc_btn {
+    margin: 10px;
+}
+#answer_div{
+    background-color:rgb(115, 255, 145)
+}
+</style>
+</head>
+<body>
+    
+<script>
+
+var tempdiv = document.createElement("div");
+document.body.appendChild(tempdiv);
+
+
+// 下端を入力するフィールド
+var temp = document.createElement("span");
+tempdiv.appendChild(temp);
+temp.innerHTML = `下端：`;
+
+var lower_limit_area=document.createElement("input");
+tempdiv.appendChild(lower_limit_area);
+lower_limit_area.setAttribute('id', 'lower_limit_area');
+
+
+tempdiv.appendChild(document.createElement("br"));
+
+
+// 上端を入力するフィールド
+var temp = document.createElement("span");
+tempdiv.appendChild(temp);
+temp.innerHTML = `上端：`;
+
+var upper_limit_area=document.createElement("input");
+tempdiv.appendChild(upper_limit_area);
+upper_limit_area.setAttribute('id', 'upper_limit_area');
+
+
+// 説明
+var limit_expl=document.createElement("p");
+tempdiv.appendChild(limit_expl);
+limit_expl.innerHTML = `
+■ここに定積分の上端と下端を入力してください。<br>
+小数表記の実数のみ受け付けています。<br>
+`;
+
+
+tempdiv = null;
+
+
+var tempdiv = document.createElement("div");
+document.body.appendChild(tempdiv);
+
+// 定積分する関数を入力するフィールド
+var func_area=document.createElement("input");
+tempdiv.appendChild(func_area);
+func_area.setAttribute('id', 'func_area');
+
+// 決定ボタン
+var calc_btn = document.createElement("button");
+tempdiv.appendChild(calc_btn);
+calc_btn.setAttribute('id', 'calc_btn');
+calc_btn.setAttribute('type', 'button');
+calc_btn.innerHTML = '定積分計算';
+calc_btn.addEventListener('click', integrate, false);
+
+tempdiv = null;
+
+
+// 説明
+var area_expl=document.createElement("p");
+document.body.appendChild(area_expl);
+area_expl.innerHTML = `
+■ここに定積分を計算したい関数を入力してください<br>
+関数は一変数関数で変数はxとします。<br>
+式の解析のために、変数のxは半角丸括弧でスペースを開けずに囲むものとし、(x)と表記してください。<br>
+掛け算の省略には対応していません。2*(x) を 2x と書くことはできません。<br>
+その他、演算の優先順位などを明示したい場合には適宜括弧を使ってください。<br>
+`;
+
+// 説明
+var math_expl=document.createElement("p");
+document.body.appendChild(math_expl);
+math_expl.innerHTML = `
+■使用できる演算子についての注意です<br>
+四則演算：+ - * / が利用できます。<br>
+sin, cos, tan, 自然対数のlog が利用できます。<br>
+違う底の対数を使いたい場合は底の変換公式で自然対数に直して使ってください。<br>
+円周率 pi とネイピア数 e が使えます。<br>
+べき乗演算： aのb乗 は pow(a,b) として使えます。aのb乗根 は pow(a,1/b) です。<br>
+`;
+
+// 答え領域のdiv
+var tempdiv = document.createElement("div");
+document.body.appendChild(tempdiv);
+tempdiv.setAttribute('id', 'answer_div');
+
+
+// 答え領域　100分割
+var answer_text100=document.createElement("p");
+answer_text100.setAttribute('id', 'answer_text100');
+tempdiv.appendChild(answer_text100);
+answer_text100.innerHTML = "精度100分割の答え：";
+
+// 答え領域　1000分割
+var answer_text1000=document.createElement("p");
+answer_text1000.setAttribute('id', 'answer_text1000');
+tempdiv.appendChild(answer_text1000);
+answer_text1000.innerHTML = "精度1000分割の答え：";
+
+// 答え領域　10000分割
+var answer_text10000=document.createElement("p");
+answer_text10000.setAttribute('id', 'answer_text10000');
+tempdiv.appendChild(answer_text10000);
+answer_text10000.innerHTML = "精度10000分割の答え：";
+
+tempdiv = null;
+
+
+// 積分実行
+function integrate(){
+    var lower_limit_string = document.getElementById('lower_limit_area').value;
+    var upper_limit_string = document.getElementById('upper_limit_area').value;
+    var calc_string = document.getElementById('func_area').value;
+
+    // 計算
+    var answer100 = safeEval(lower_limit_string, upper_limit_string, calc_string, 100);
+    // 答え表示
+    document.getElementById('answer_text100').innerHTML = "精度100分割の答え：" + answer100;
+
+    // 計算
+    var answer1000 = safeEval(lower_limit_string, upper_limit_string, calc_string, 1000);
+    // 答え表示
+    document.getElementById('answer_text1000').innerHTML = "精度1000分割の答え：" + answer1000;
+
+    // 計算
+    var answer10000 = safeEval(lower_limit_string, upper_limit_string, calc_string, 10000);
+    // 答え表示
+    document.getElementById('answer_text10000').innerHTML = "精度10000分割の答え：" + answer10000;
+
+
+}
+
+
+// 積分計算詳細
+function safeEval(lower_limit_string, upper_limit_string, calc_string, fineness){
+    // どれか一つでも空文字列なら定積分が未定義状態なので強制終了
+    if (lower_limit_string === '' || upper_limit_string === '' || calc_string === ''){
+        return false;
+    }
+
+    // 下端、上端のバリデーション
+    var check_string = lower_limit_string;
+    irreg_flg = check_string.match(/[^ \d\.]/);
+    // 安全じゃない場合強制終了
+    if(irreg_flg !== null){
+        return false;
+    }
+
+    var check_string = upper_limit_string;
+    irreg_flg = check_string.match(/[^ \d\.]/);
+    // 安全じゃない場合強制終了
+    if(irreg_flg !== null){
+        return false;
+    }
+
+
+
+    // 数式エリアのバリデーション
+    // 正規表現と置換で全て無毒化できたら処理を進めるような形にする。
+    var check_string = calc_string;
+    check_string = check_string.replace( /\d|\+|\-|\*|\/|~|\(|\)|\{|\}|\.|\,/g, ' ');
+    check_string = check_string.replace( /x|sin|cos|tan|pow|pi|e|log/g, ' ');
+
+    // チェック文字列にスペース以外の文字が入っていたらエラー状態
+    // これの値が null ならほぼ間違いなく安全。
+    irreg_flg = check_string.match(/[^ ]/);
+
+    // 安全じゃない場合強制終了
+    if(irreg_flg !== null){
+        return false;
+    }
+
+    // Math.の関数に変換していく。
+    calc_string = calc_string.replace( /(sin|cos|tan)/g, 'Math.$1');
+    calc_string = calc_string.replace( /pi/g, 'Math.PI');
+    calc_string = calc_string.replace( /e/g, 'Math.E');
+    calc_string = calc_string.replace( /(log)/g, 'Math.$1');
+    calc_string = calc_string.replace( /(pow)/g, 'Math.$1');
+
+    // x の関数 になっているはず。
+    var func_string = calc_string;
+
+    
+    // 積分の計算本題
+    var sum = 0;
+    var interval = upper_limit_string - lower_limit_string;
+    var piece = interval/fineness;
+
+
+    var i=0, a=0, b=0;
+    for (i=0; i<fineness; i++){
+        // - 0 で数値に型変換
+        a = lower_limit_string - 0 + piece * (i);
+        b = lower_limit_string - 0 + piece * (i+1);
+        
+        // 各区間端点での関数値計算
+        func_string_a = func_string.replace( /\(x\)/g, a);
+        func_string_b = func_string.replace( /\(x\)/g, b);
+
+        // 小区間における台形近似面積計算
+        mean = ( Function('"use strict";return ('+func_string_a+')')() + Function('"use strict";return ('+func_string_b+')')() ) / 2;
+
+        // 積み上げ
+        sum += mean * piece;
+    }
+
+    return sum;
+}
+
+
+
+</script>    
+</body>
+</html>
+
